@@ -1,67 +1,75 @@
 import os
 import sys
 
+# Board configuration constants
+BOARD_SIZE = 19
+WIN_STREAK = 5
+
+# Derived constants
+BOARD_LAST_INDEX = BOARD_SIZE - 1  # 18
+WIN_STREAK_MINUS_ONE = WIN_STREAK - 1  # 4
+
 def check_victory(board):
-    diag_forward_counts = [0]*19
-    diag_backward_counts = [0]*19
-    vert_counts = [0]*19
-    for i,row in zip(range(19), board):
+    diag_forward_counts = [0]*BOARD_SIZE
+    diag_backward_counts = [0]*BOARD_SIZE
+    vert_counts = [0]*BOARD_SIZE
+    for i,row in zip(range(BOARD_SIZE), board):
         horizontal_count = 0
-        diag_forward_counts_new = [0]*19
-        for j,c in zip(range(19), row):
+        diag_forward_counts_new = [0]*BOARD_SIZE
+        for j,c in zip(range(BOARD_SIZE), row):
             if c=='0':
-                if horizontal_count==5:
-                    return int(row[j-1]), i, j-5
+                if horizontal_count==WIN_STREAK:
+                    return int(row[j-1]), i, j-WIN_STREAK
                 horizontal_count=0
-                if j!=0 and diag_forward_counts[j-1]==5:
-                    return int(board[i-1][j-1]), i-5, j-5
+                if j!=0 and diag_forward_counts[j-1]==WIN_STREAK:
+                    return int(board[i-1][j-1]), i-WIN_STREAK, j-WIN_STREAK
                 diag_forward_counts_new[j]=0
-                if vert_counts[j]==5:
-                    return int(board[i-1][j]), i-5, j
+                if vert_counts[j]==WIN_STREAK:
+                    return int(board[i-1][j]), i-WIN_STREAK, j
                 vert_counts[j]=0
-                if j!=18 and diag_backward_counts[j+1]==5:
+                if j!=BOARD_LAST_INDEX and diag_backward_counts[j+1]==WIN_STREAK:
                     return int(board[i-1][j+1]), i-1, j+1
                 diag_backward_counts[j]=0
             else:
                 if j==0:
                     horizontal_count=1
                 elif row[j-1]!=c:
-                    if horizontal_count==5:
-                        return int(row[j-1]), i, j-5
+                    if horizontal_count==WIN_STREAK:
+                        return int(row[j-1]), i, j-WIN_STREAK
                     horizontal_count=1
                 else:
                     horizontal_count+=1
-                    if j==18 and horizontal_count==5:
-                        return int(c), i, 18-4
+                    if j==BOARD_LAST_INDEX and horizontal_count==WIN_STREAK:
+                        return int(c), i, BOARD_LAST_INDEX-WIN_STREAK_MINUS_ONE
                 if j==0 or i==0:
                     diag_forward_counts_new[j]=1
                 elif board[i-1][j-1]!=c:
-                    if diag_forward_counts[j-1]==5:
-                        return int(board[i-1][j-1]), i-5, j-5
+                    if diag_forward_counts[j-1]==WIN_STREAK:
+                        return int(board[i-1][j-1]), i-WIN_STREAK, j-WIN_STREAK
                     diag_forward_counts_new[j]=1
                 else:
                     diag_forward_counts_new[j]=diag_forward_counts[j-1]+1
-                    if (j==18 or i==18) and diag_forward_counts_new[j]==5:
-                        return int(c), i-4, j-4
+                    if (j==BOARD_LAST_INDEX or i==BOARD_LAST_INDEX) and diag_forward_counts_new[j]==WIN_STREAK:
+                        return int(c), i-WIN_STREAK_MINUS_ONE, j-WIN_STREAK_MINUS_ONE
                 if i==0:
                     vert_counts[j]=1
                 elif board[i-1][j]!=c:
-                    if vert_counts[j]==5:
-                        return int(board[i-1][j]), i-5, j
+                    if vert_counts[j]==WIN_STREAK:
+                        return int(board[i-1][j]), i-WIN_STREAK, j
                     vert_counts[j]=1
                 else:
                     vert_counts[j]+=1
-                    if i==18 and vert_counts[j]==5:
-                        return int(c), 18-4, j
-                if i==0 or j==18:
+                    if i==BOARD_LAST_INDEX and vert_counts[j]==WIN_STREAK:
+                        return int(c), BOARD_LAST_INDEX-WIN_STREAK_MINUS_ONE, j
+                if i==0 or j==BOARD_LAST_INDEX:
                     diag_backward_counts[j]=1
                 elif board[i-1][j+1]!=c:
-                    if diag_backward_counts[j+1]==5:
+                    if diag_backward_counts[j+1]==WIN_STREAK:
                         return int(board[i-1][j+1]), i-1, j+1
                     diag_backward_counts[j]=1
                 else:
                     diag_backward_counts[j]=diag_backward_counts[j+1]+1
-                    if (i==18 or j==0) and diag_backward_counts[j]==5:
+                    if (i==BOARD_LAST_INDEX or j==0) and diag_backward_counts[j]==WIN_STREAK:
                         return int(c), i, j
         diag_forward_counts = diag_forward_counts_new
     return 0, None, None
