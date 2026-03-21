@@ -4,6 +4,17 @@ import sys
 BOARD_SIZE = 19
 WIN_STREAK = 5
 
+def check_if_board_correct(board):
+    if len(board)!=BOARD_SIZE:
+        return False
+    for row in board:
+        if len(row)!=BOARD_SIZE:
+            return False
+        if len(set(row)-{'0', '1', '2'}):
+            return False
+    return True
+
+
 def check_victory(board):
     diag_forward_counts = [0]*BOARD_SIZE
     diag_backward_counts = [0]*BOARD_SIZE
@@ -75,6 +86,9 @@ if __name__=='__main__':
         test_n = int(f.readline())
         for _ in range(test_n):
             board = [f.readline().replace(' ', '')[:BOARD_SIZE] for _ in range(BOARD_SIZE)]
+            if not check_if_board_correct(board):
+                print('Incorrect board!')
+                break
             result, row, col = check_victory(board)
             print(result)
             if result:
