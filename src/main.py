@@ -15,69 +15,61 @@ def check_if_board_correct(board):
     return True
 
 
+def is_limit(i, j):
+    return not(0 <= i < BOARD_SIZE and 0 <= j < BOARD_SIZE)
+
+
+def check_horizontal_victory(row):
+    count = 0
+    for c, j in zip(row, range(BOARD_SIZE)):
+        if c=='0':
+            if count==WIN_STREAK:
+                return int(row[j-1]), j-WIN_STREAK
+            count = 0
+        elif j==0:
+            count = 1
+        elif c==row[j-1]:
+            count+=1
+        elif count==WIN_STREAK:
+            return int(row[j-1]), j-WIN_STREAK
+        else:
+            count = 1
+    if count == WIN_STREAK:
+        return int(row[-1]), BOARD_SIZE-WIN_STREAK
+    return 0, None
+
+
+
 def check_victory(board):
-    diag_forward_counts = [0]*BOARD_SIZE
-    diag_backward_counts = [0]*BOARD_SIZE
+    forward_diag_counts = [0]*BOARD_SIZE
+    backward_diag_counts = [0]*BOARD_SIZE
     vert_counts = [0]*BOARD_SIZE
     for i,row in zip(range(BOARD_SIZE), board):
-        horizontal_count = 0
-        diag_forward_counts_new = [0]*BOARD_SIZE
+        horizontal_victory, horizontal_position = check_horizontal_victory(row)
+        if horizontal_victory:
+            return horizontal_victory, i, horizontal_position
+        forward_diag_counts_new = [0]*BOARD_SIZE
         for j,c in zip(range(BOARD_SIZE), row):
             if c=='0':
-                if horizontal_count==WIN_STREAK:
-                    return int(row[j-1]), i, j-WIN_STREAK
-                horizontal_count=0
-                if j!=0 and diag_forward_counts[j-1]==WIN_STREAK:
-                    return int(board[i-1][j-1]), i-WIN_STREAK, j-WIN_STREAK
-                diag_forward_counts_new[j]=0
-                if vert_counts[j]==WIN_STREAK:
-                    return int(board[i-1][j]), i-WIN_STREAK, j
-                vert_counts[j]=0
-                if j!=BOARD_SIZE-1 and diag_backward_counts[j+1]==WIN_STREAK:
-                    return int(board[i-1][j+1]), i-1, j+1
-                diag_backward_counts[j]=0
+                for old_counter, new_counter, direction in [(forward_diag_counts, forward_diag_counts_new, (1, 1)), (backward_diag_counts, backward_diag_counts, (1, -1)), (vert_counts, vert_counts, (1, 0))]:
+                    if not is_limit(i-direction[0], j-direction[1]) and old_counter[j-direction[1]] == WIN_STREAK:
+                        return int(board[i-direction[0]][j-direction[1]]), i-direction[0]*(WIN_STREAK if direction[1]>=0 else 1), j-direction[1]*(WIN_STREAK if direction[1]>=0 else 1)
+                    new_counter[j] = 0
             else:
-                if j==0:
-                    horizontal_count=1
-                elif row[j-1]!=c:
-                    if horizontal_count==WIN_STREAK:
-                        return int(row[j-1]), i, j-WIN_STREAK
-                    horizontal_count=1
-                else:
-                    horizontal_count+=1
-                    if j==BOARD_SIZE-1 and horizontal_count==WIN_STREAK:
-                        return int(c), i, BOARD_SIZE-WIN_STREAK
-                if j==0 or i==0:
-                    diag_forward_counts_new[j]=1
-                elif board[i-1][j-1]!=c:
-                    if diag_forward_counts[j-1]==WIN_STREAK:
-                        return int(board[i-1][j-1]), i-WIN_STREAK, j-WIN_STREAK
-                    diag_forward_counts_new[j]=1
-                else:
-                    diag_forward_counts_new[j]=diag_forward_counts[j-1]+1
-                    if (j==BOARD_SIZE-1 or i==BOARD_SIZE-1) and diag_forward_counts_new[j]==WIN_STREAK:
-                        return int(c), i-WIN_STREAK+1, j-WIN_STREAK+1
-                if i==0:
-                    vert_counts[j]=1
-                elif board[i-1][j]!=c:
-                    if vert_counts[j]==WIN_STREAK:
-                        return int(board[i-1][j]), i-WIN_STREAK, j
-                    vert_counts[j]=1
-                else:
-                    vert_counts[j]+=1
-                    if i==BOARD_SIZE-1 and vert_counts[j]==WIN_STREAK:
-                        return int(c), BOARD_SIZE-WIN_STREAK, j
-                if i==0 or j==BOARD_SIZE-1:
-                    diag_backward_counts[j]=1
-                elif board[i-1][j+1]!=c:
-                    if diag_backward_counts[j+1]==WIN_STREAK:
-                        return int(board[i-1][j+1]), i-1, j+1
-                    diag_backward_counts[j]=1
-                else:
-                    diag_backward_counts[j]=diag_backward_counts[j+1]+1
-                    if (i==BOARD_SIZE-1 or j==0) and diag_backward_counts[j]==WIN_STREAK:
-                        return int(c), i, j
-        diag_forward_counts = diag_forward_counts_new
+                for old_counter, new_counter, direction in [(forward_diag_counts, forward_diag_counts_new, (1, 1)), (backward_diag_counts, backward_diag_counts, (1, -1)), (vert_counts, vert_counts, (1, 0))]:
+                    i_d = i-direction[0]
+                    j_d = j-direction[1]
+                    if is_limit(i_d, j_d):
+                        new_counter[j]=1
+                    elif board[i_d][j_d]!=c:
+                        if old_counter[j_d] == WIN_STREAK:
+                            return int(board[i_d][j_d]), i-direction[0]*(WIN_STREAK if direction[1]>=0 else 1), j-direction[1]*(WIN_STREAK if direction[1]>=0 else 1)
+                        new_counter[j]=1
+                    else:
+                        new_counter[j]=old_counter[j_d]+1
+                        if is_limit(i+direction[0], j+direction[1]) and new_counter[j]==WIN_STREAK:
+                            return int(c), i-direction[0]*(WIN_STREAK-1) if direction[1]>=0 else i, j-direction[1]*(WIN_STREAK-1) if direction[1]>=0 else j
+        forward_diag_counts = forward_diag_counts_new
     return 0, None, None
 
 if __name__=='__main__':
