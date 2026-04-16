@@ -39,8 +39,15 @@ def check_horizontal_victory(row):
     return 0, None
 
 
+def form_victory_tuple(board, start_from, direction, start_overshoot = True):
+    multiplier = ((WIN_STREAK if direction[1]>=0 else 1) - (not start_overshoot))
+    i = start_from[0] - direction[0]*multiplier
+    j = start_from[1] - direction[1]*multiplier
+    return int(board[i][j]), i, j
+
 
 def check_victory(board):
+    directions = ((1, 1), (1, -1), (1, 0))
     forward_diag_counts = [0]*BOARD_SIZE
     backward_diag_counts = [0]*BOARD_SIZE
     vert_counts = [0]*BOARD_SIZE
@@ -49,26 +56,27 @@ def check_victory(board):
         if horizontal_victory:
             return horizontal_victory, i, horizontal_position
         forward_diag_counts_new = [0]*BOARD_SIZE
+        counters = ([forward_diag_counts, forward_diag_counts_new], [backward_diag_counts]*2, [vert_counts]*2)
         for j,c in zip(range(BOARD_SIZE), row):
             if c=='0':
-                for old_counter, new_counter, direction in [(forward_diag_counts, forward_diag_counts_new, (1, 1)), (backward_diag_counts, backward_diag_counts, (1, -1)), (vert_counts, vert_counts, (1, 0))]:
+                for (old_counter, new_counter), direction in zip(counters, directions):
                     if not is_limit(i-direction[0], j-direction[1]) and old_counter[j-direction[1]] == WIN_STREAK:
-                        return int(board[i-direction[0]][j-direction[1]]), i-direction[0]*(WIN_STREAK if direction[1]>=0 else 1), j-direction[1]*(WIN_STREAK if direction[1]>=0 else 1)
+                        return form_victory_tuple(board, (i, j), direction)
                     new_counter[j] = 0
             else:
-                for old_counter, new_counter, direction in [(forward_diag_counts, forward_diag_counts_new, (1, 1)), (backward_diag_counts, backward_diag_counts, (1, -1)), (vert_counts, vert_counts, (1, 0))]:
+                for (old_counter, new_counter), direction in zip(counters, directions):
                     i_d = i-direction[0]
                     j_d = j-direction[1]
                     if is_limit(i_d, j_d):
                         new_counter[j]=1
                     elif board[i_d][j_d]!=c:
                         if old_counter[j_d] == WIN_STREAK:
-                            return int(board[i_d][j_d]), i-direction[0]*(WIN_STREAK if direction[1]>=0 else 1), j-direction[1]*(WIN_STREAK if direction[1]>=0 else 1)
+                            return form_victory_tuple(board, (i, j), direction)
                         new_counter[j]=1
                     else:
                         new_counter[j]=old_counter[j_d]+1
                         if is_limit(i+direction[0], j+direction[1]) and new_counter[j]==WIN_STREAK:
-                            return int(c), i-direction[0]*(WIN_STREAK-1) if direction[1]>=0 else i, j-direction[1]*(WIN_STREAK-1) if direction[1]>=0 else j
+                            return form_victory_tuple(board, (i, j), direction, False)
         forward_diag_counts = forward_diag_counts_new
     return 0, None, None
 
